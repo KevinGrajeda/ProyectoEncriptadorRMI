@@ -10,6 +10,8 @@ public class Main {
     public final static String ipLocal = "192.168.100.11";
     public final static String ipServidor = "192.168.100.11";
     public final static int puerto = 1100;
+    public final static String rutaResultado = "resultado/";
+
     public final static Color botonColor = new Color(43, 43, 43);
     public final static Color fondo = new Color(60, 63, 65);
     public final static Color texto = new Color(232, 232, 232);

@@ -10,6 +10,6 @@ public interface InterfaceServidor extends Remote {
     int TODOS=3;
 
     int registro(InterfaceCliente cliente)throws RemoteException;
-    void setArchivo(byte[] archivo, int codCliente)throws RemoteException;
+    void setArchivo(byte[] archivo, String nombreArchivo, int codCliente)throws RemoteException;
     void encriptar(int llave,int tipoEncriptacion,int codCliente)throws RemoteException;
 }

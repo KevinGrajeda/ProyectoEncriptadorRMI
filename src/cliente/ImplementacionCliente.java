@@ -6,13 +6,14 @@ import main.InterfaceServidor;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
+import java.util.Arrays;
+
+import static main.Main.rutaResultado;
 
 public class ImplementacionCliente extends UnicastRemoteObject implements InterfaceCliente {
 
@@ -49,15 +50,12 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
 
         JButton botonArchivo = new JButton("seleccionar imagen");
         botonArchivo.setBounds(40, 20, 170, 30);
-        botonArchivo.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    escogerImagen();
-                } catch (IOException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
+        botonArchivo.addActionListener(e -> {
+            try {
+                escogerImagen();
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
             }
         });
         frame.add(botonArchivo);
@@ -74,7 +72,7 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
         lblTipo.setBounds(40, 160, 170, 20);
         frame.add(lblTipo);
         String[] tipos = {"Secuencial", "ExecutorService", "ForkJoin", "Todos"};
-        tipoAlgoritmo = new JComboBox<String>(tipos);
+        tipoAlgoritmo = new JComboBox<>(tipos);
         tipoAlgoritmo.setBounds(40, 180, 170, 30);
         frame.add(tipoAlgoritmo);
 
@@ -95,19 +93,16 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
         botonEncriptar = new JButton("encriptar imagen");
         botonEncriptar.setEnabled(false);
         botonEncriptar.setBounds(40, 400, 170, 30);
-        botonEncriptar.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    int llave = Integer.parseInt(txtLlave.getText());
-                    int index = tipoAlgoritmo.getSelectedIndex();
-                    servidor.encriptar(llave, index, codCliente);
-                } catch (NumberFormatException n) {
-                    JOptionPane.showMessageDialog(null, "Escribe una llave valida", "Error", JOptionPane.ERROR_MESSAGE);
-                    txtLlave.setText("");
-                } catch (RemoteException ex) {
-                    throw new RuntimeException(ex);
-                }
+        botonEncriptar.addActionListener(e -> {
+            try {
+                int llave = Integer.parseInt(txtLlave.getText());
+                int index = tipoAlgoritmo.getSelectedIndex();
+                servidor.encriptar(llave, index, codCliente);
+            } catch (NumberFormatException n) {
+                JOptionPane.showMessageDialog(null, "Escribe una llave valida", "Error", JOptionPane.ERROR_MESSAGE);
+                txtLlave.setText("");
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
             }
         });
         frame.add(botonEncriptar);
@@ -124,41 +119,33 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             String nombre = chooser.getSelectedFile().getName();
             lblInfo.setText("archivo: " + nombre);
-            String extension = nombre.substring(nombre.lastIndexOf("."), nombre.length());
+            String extension = nombre.substring(nombre.lastIndexOf("."));
             rutaImagen = chooser.getSelectedFile().getPath();
 
-            if (extension.equals(".png") || extension.equals(".jpg") || extension.equals(".jpeg")
-                    || extension.equals(".mkv")) {
+            leerArchivo(rutaImagen,nombre);
+            if (extension.equals(".png") || extension.equals(".jpg") || extension.equals(".jpeg")  || extension.equals(".mkv")) {
                 esEncriptado = false;
-                leerArchivo(rutaImagen);
-                //System.out.println(ruta);
                 labelImagen.setIcon(new ImageIcon(rutaImagen));
                 botonEncriptar.setText("encriptar imagen");
                 botonEncriptar.setEnabled(true);
-                //System.out.println("imagen");
             } else if (extension.equals(".ceticrypt")) {
                 esEncriptado = true;
-                leerArchivo(rutaImagen);
                 labelImagen.setIcon(new ImageIcon());
                 botonEncriptar.setText("desencriptar imagen");
                 botonEncriptar.setEnabled(true);
-                //System.out.println("encriptacion");
             } else {
                 esEncriptado = false;
-                //System.out.println("no");
-                leerArchivo(rutaImagen);
                 botonEncriptar.setText("encriptar archivo");
                 botonEncriptar.setEnabled(true);
             }
         }
     }
 
-    private void leerArchivo(String ruta) throws IOException {
-        FileInputStream fis = null;
-        fis = new FileInputStream(ruta);
+    private void leerArchivo(String ruta, String nombreArchivo) throws IOException {
+        FileInputStream fis = new FileInputStream(ruta);
         byte[] data = new byte[fis.available()];
         fis.read(data);
-        servidor.setArchivo(data, codCliente);
+        servidor.setArchivo(data, nombreArchivo,codCliente);
 
         fis.close();
 
@@ -166,8 +153,39 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
 
 
     @Override
-    public void setResultado(byte[][] archivosEncriptados) throws RemoteException {
-
+    public void setResultado(byte[][] archivosEncriptados,String[] nombresArchivos) throws RemoteException {
+        System.out.println("servidor regreso"+ Arrays.toString(nombresArchivos));
+        try {
+            for(int i=0;i<archivosEncriptados.length;i++){
+                FileOutputStream fos = new FileOutputStream(rutaResultado+nombresArchivos[i]);
+                fos.write(archivosEncriptados[i]);
+                fos.close();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        //TODO mostrar las dos imagenes
+        /*try {
+            FileOutputStream fos = null;
+            if (esEncriptado) {
+                fos = new FileOutputStream(ruta.substring(0, ruta.length() - 10));
+                fos.write(datosFinal);
+                fos.close();
+                //System.out.println(ruta.substring(0, ruta.length() - 10));
+                label.setIcon(new ImageIcon(datosFinal));
+                botonEncriptar.setEnabled(false);
+                new File(ruta).delete();
+            } else {
+                fos = new FileOutputStream(ruta + ".ceticrypt");
+                fos.write(datosFinal);
+                fos.close();
+                label.setIcon(new ImageIcon());
+                botonEncriptar.setEnabled(false);
+                new File(ruta).delete();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
     }
 
     @Override
@@ -182,12 +200,7 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
 
     @Override
     public void setAdvertencia(String mensaje) {
-        Runnable doAssist = new Runnable() {
-            @Override
-            public void run() {
-                JOptionPane.showMessageDialog(null, mensaje, "mensaje", JOptionPane.INFORMATION_MESSAGE);
-            }
-        };
+        Runnable doAssist = () -> JOptionPane.showMessageDialog(null, mensaje, "mensaje", JOptionPane.INFORMATION_MESSAGE);
         SwingUtilities.invokeLater(doAssist);
     }
 }

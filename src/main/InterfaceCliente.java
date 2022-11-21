@@ -8,7 +8,7 @@ public interface InterfaceCliente extends Remote {
     int EXECUTOR=1;
     int FORKJOIN=2;
     int TODOS=3;
-    void setResultado(byte[][] archivosEncriptados) throws RemoteException;
+    void setResultado(byte[][] archivosEncriptados, String[] nombresArchivos) throws RemoteException;
 
     void setTiempos(long tiempo, int tipo) throws RemoteException;
 
