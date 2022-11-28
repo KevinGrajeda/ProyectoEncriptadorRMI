@@ -7,18 +7,20 @@ import main.InterfaceServidor;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
 
+import static main.InterfaceServidor.*;
 import static main.Main.rutaResultado;
 
 public class ImplementacionCliente extends UnicastRemoteObject implements InterfaceCliente {
 
     JButton botonEncriptar;
-    JLabel labelImagen, lblSecuencial, lblExecutor, lblFork, lblInfo;
+    JLabel labelImagen,labelImagen2, lblSecuencial, lblExecutor, lblFork, lblInfo;
     JFrame frame;
     JTextField txtLlave;
     JComboBox tipoAlgoritmo;
@@ -41,8 +43,14 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
         labelImagen = new JLabel();
 
         JScrollPane scrollpane = new JScrollPane(labelImagen);
-        scrollpane.setBounds(240, 20, 800, 600);
+        scrollpane.setBounds(240, 20, 400, 600);
         frame.add(scrollpane);
+
+        labelImagen2 = new JLabel();
+
+        JScrollPane scrollpane2 = new JScrollPane(labelImagen2);
+        scrollpane2.setBounds(640, 20, 400, 600);
+        frame.add(scrollpane2);
 
         lblInfo = new JLabel("selecciona un archivo");
         lblInfo.setBounds(240, 620, 500, 30);
@@ -126,13 +134,11 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
             if (extension.equals(".png") || extension.equals(".jpg") || extension.equals(".jpeg")  || extension.equals(".mkv")) {
                 esEncriptado = false;
                 labelImagen.setIcon(new ImageIcon(rutaImagen));
-                botonEncriptar.setText("encriptar imagen");
-                botonEncriptar.setEnabled(true);
+                labelImagen2.setIcon(new ImageIcon());
             } else if (extension.equals(".ceticrypt")) {
                 esEncriptado = true;
                 labelImagen.setIcon(new ImageIcon());
-                botonEncriptar.setText("desencriptar imagen");
-                botonEncriptar.setEnabled(true);
+                labelImagen2.setIcon(new ImageIcon());
             } else {
                 esEncriptado = false;
                 botonEncriptar.setText("encriptar archivo");
@@ -153,17 +159,29 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
 
 
     @Override
-    public void setResultado(byte[][] archivosEncriptados,String[] nombresArchivos) throws RemoteException {
-        System.out.println("servidor regreso"+ Arrays.toString(nombresArchivos));
+    public void setResultado(byte[] archivoEncriptado,String nombreArchivo) throws RemoteException {
+        System.out.println("servidor regreso "+ nombreArchivo);
+        FileOutputStream fos = null;
         try {
+            fos = new FileOutputStream(rutaResultado+nombreArchivo);
+            fos.write(archivoEncriptado);
+            fos.close();
+            setAdvertencia("se ha descargado el archivo "+nombreArchivo);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        /*try {
             for(int i=0;i<archivosEncriptados.length;i++){
                 FileOutputStream fos = new FileOutputStream(rutaResultado+nombresArchivos[i]);
                 fos.write(archivosEncriptados[i]);
                 fos.close();
             }
+            labelImagen.setIcon(new ImageIcon(archivosEncriptados[0]));
+            labelImagen2.setIcon(new ImageIcon(archivosEncriptados[1]));
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
+        }*/
         //TODO mostrar las dos imagenes
         /*try {
             FileOutputStream fos = null;
@@ -189,11 +207,35 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
     }
 
     @Override
+    public void setImagenes(byte[] archivoEncriptado, int tamanioPrimer) throws RemoteException {
+        System.out.println("cliente recibio");
+        System.out.println("junto: "+Arrays.toString(archivoEncriptado));
+        //System.out.println(tamanioPrimer);
+        try {
+            byte[] primeraImagen=Arrays.copyOfRange(archivoEncriptado,0,tamanioPrimer);
+            byte[] segundaImagen=Arrays.copyOfRange(archivoEncriptado,tamanioPrimer,archivoEncriptado.length);
+            labelImagen.setIcon(new ImageIcon(primeraImagen));
+            labelImagen2.setIcon(new ImageIcon(segundaImagen));
+        }catch (Error | Exception e){
+            labelImagen.setIcon(new ImageIcon());
+            labelImagen2.setIcon(new ImageIcon());
+        }
+
+
+    }
+
+    @Override
     public void setTiempos(long tiempo, int tipo) throws RemoteException {
         switch (tipo) {
-            case SECUENCIAL -> lblSecuencial.setText("Secuencial: " + tiempo);
-            case EXECUTOR -> lblExecutor.setText("Executor: " + tiempo);
-            case FORKJOIN -> lblFork.setText("ForkJoin: " + tiempo);
+            case SECUENCIAL:
+            lblSecuencial.setText("Secuencial: " + tiempo);
+            break;
+            case EXECUTOR:
+             lblExecutor.setText("Executor: " + tiempo);
+            break;
+            case FORKJOIN: 
+            lblFork.setText("ForkJoin: " + tiempo);
+            break;
         }
     }
 
@@ -202,5 +244,25 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
     public void setAdvertencia(String mensaje) {
         Runnable doAssist = () -> JOptionPane.showMessageDialog(null, mensaje, "mensaje", JOptionPane.INFORMATION_MESSAGE);
         SwingUtilities.invokeLater(doAssist);
+    }
+
+    @Override
+    public void setModo(int modo) throws RemoteException {
+        switch (modo){
+            case ENCRIPTAR_DISPONIBLE:
+                botonEncriptar.setText("encriptar imagenes");
+                botonEncriptar.setEnabled(true);
+                break;
+            case DESENCRIPTAR_DISPONIBLE:
+                labelImagen.setIcon(new ImageIcon());
+                labelImagen2.setIcon(new ImageIcon());
+                lblInfo.setText("archivo: ");
+                botonEncriptar.setText("desencriptar imagenes");
+                botonEncriptar.setEnabled(true);
+                break;
+            case NADA_DISPONIBLE:
+                botonEncriptar.setEnabled(false);
+                break;
+        }
     }
 }
