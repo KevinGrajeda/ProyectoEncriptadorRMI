@@ -57,7 +57,8 @@ public class ImplementacionServidor extends UnicastRemoteObject implements Inter
             if (archivos[0] != null && archivos[1] != null) {
                 listo = true;
                 enviarModo(ENCRIPTAR_DISPONIBLE);
-            }else{
+            }
+            if(archivos[0] == null || archivos[1] == null){
                 enviarModo(NADA_DISPONIBLE);
                 listo=false;
 

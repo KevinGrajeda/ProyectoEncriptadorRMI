@@ -59,7 +59,7 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
         lblInfo.setBounds(240, 620, 500, 30);
         frame.add(lblInfo);
 
-        JButton botonArchivo = new JButton("seleccionar imagen");
+        JButton botonArchivo = new JButton("seleccionar img");
         botonArchivo.setBounds(40, 20, 170, 30);
         botonArchivo.addActionListener(e -> {
             try {
@@ -211,7 +211,7 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
 
     @Override
     public void setImagenes(byte[] archivoEncriptado, int tamanioPrimer) throws RemoteException {
-        System.out.println("cliente recibio");
+        //System.out.println("cliente recibio");
         //System.out.println("junto: "+Arrays.toString(archivoEncriptado));
         //System.out.println(tamanioPrimer);
         try {
@@ -265,7 +265,7 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
                 scrollpane2.setVisible(true);
 
                 lblInfo.setText("archivo: ");
-                botonEncriptar.setText("desencriptar imagenes");
+                botonEncriptar.setText("desencriptar");
                 botonEncriptar.setEnabled(true);
                 break;
             case NADA_DISPONIBLE:
