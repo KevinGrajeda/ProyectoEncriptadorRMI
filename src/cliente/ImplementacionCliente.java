@@ -24,6 +24,7 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
     JFrame frame;
     JTextField txtLlave;
     JComboBox tipoAlgoritmo;
+    JScrollPane scrollpane2,scrollpane;
     String rutaImagen;
     boolean esEncriptado;
     InterfaceServidor servidor;
@@ -42,15 +43,17 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
 
         labelImagen = new JLabel();
 
-        JScrollPane scrollpane = new JScrollPane(labelImagen);
-        scrollpane.setBounds(240, 20, 400, 600);
+        scrollpane = new JScrollPane(labelImagen);
+        scrollpane.setBounds(240, 20, 800, 600);
         frame.add(scrollpane);
 
         labelImagen2 = new JLabel();
 
-        JScrollPane scrollpane2 = new JScrollPane(labelImagen2);
+        scrollpane2 = new JScrollPane(labelImagen2);
         scrollpane2.setBounds(640, 20, 400, 600);
+        scrollpane2.setVisible(false);
         frame.add(scrollpane2);
+
 
         lblInfo = new JLabel("selecciona un archivo");
         lblInfo.setBounds(240, 620, 500, 30);
@@ -160,7 +163,7 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
 
     @Override
     public void setResultado(byte[] archivoEncriptado,String nombreArchivo) throws RemoteException {
-        System.out.println("servidor regreso "+ nombreArchivo);
+        //System.out.println("servidor regreso "+ nombreArchivo);
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(rutaResultado+nombreArchivo);
@@ -209,7 +212,7 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
     @Override
     public void setImagenes(byte[] archivoEncriptado, int tamanioPrimer) throws RemoteException {
         System.out.println("cliente recibio");
-        System.out.println("junto: "+Arrays.toString(archivoEncriptado));
+        //System.out.println("junto: "+Arrays.toString(archivoEncriptado));
         //System.out.println(tamanioPrimer);
         try {
             byte[] primeraImagen=Arrays.copyOfRange(archivoEncriptado,0,tamanioPrimer);
@@ -250,17 +253,24 @@ public class ImplementacionCliente extends UnicastRemoteObject implements Interf
     public void setModo(int modo) throws RemoteException {
         switch (modo){
             case ENCRIPTAR_DISPONIBLE:
+
                 botonEncriptar.setText("encriptar imagenes");
                 botonEncriptar.setEnabled(true);
                 break;
             case DESENCRIPTAR_DISPONIBLE:
                 labelImagen.setIcon(new ImageIcon());
                 labelImagen2.setIcon(new ImageIcon());
+
+                scrollpane.setBounds(240, 20, 400, 600);
+                scrollpane2.setVisible(true);
+
                 lblInfo.setText("archivo: ");
                 botonEncriptar.setText("desencriptar imagenes");
                 botonEncriptar.setEnabled(true);
                 break;
             case NADA_DISPONIBLE:
+                scrollpane.setBounds(240, 20, 800, 600);
+                scrollpane2.setVisible(false);
                 botonEncriptar.setEnabled(false);
                 break;
         }

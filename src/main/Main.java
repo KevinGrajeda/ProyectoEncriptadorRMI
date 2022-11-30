@@ -31,8 +31,6 @@ public class Main {
 
         switch (n) {
             case 0:
-                new Servidor();
-                new Cliente();
                 new Cliente();
                 break;
             case 1:

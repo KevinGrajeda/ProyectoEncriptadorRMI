@@ -2,6 +2,8 @@ package servidor;
 
 import main.InterfaceCliente;
 import main.InterfaceServidor;
+import servidor.encriptadores.EncriptadoExecutor;
+import servidor.encriptadores.EncriptadoForkJoin;
 import servidor.encriptadores.EncriptadoSecuencial;
 
 import java.nio.ByteBuffer;
@@ -9,6 +11,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.ForkJoinPool;
 
 public class ImplementacionServidor extends UnicastRemoteObject implements InterfaceServidor {
     byte[][] archivos;
@@ -54,6 +57,10 @@ public class ImplementacionServidor extends UnicastRemoteObject implements Inter
             if (archivos[0] != null && archivos[1] != null) {
                 listo = true;
                 enviarModo(ENCRIPTAR_DISPONIBLE);
+            }else{
+                enviarModo(NADA_DISPONIBLE);
+                listo=false;
+
             }
             System.out.println("cliente " + codCliente + " envio archivo: " + nombreArchivo);
 
@@ -74,7 +81,7 @@ public class ImplementacionServidor extends UnicastRemoteObject implements Inter
         if(encriptado){
             archivoParaEncriptar=Arrays.copyOf(archivos[0],archivos[0].length);
             nombreArchivoNuevo=nombresArchivos[0];
-            System.out.println("tamaño archivo="+archivoParaEncriptar.length);
+
         }else{
             archivoParaEncriptar = Arrays.copyOf(archivos[0], archivos[0].length + archivos[1].length + 4);
             System.arraycopy(archivos[1], 0, archivoParaEncriptar, archivos[0].length, archivos[1].length);
@@ -85,33 +92,57 @@ public class ImplementacionServidor extends UnicastRemoteObject implements Inter
                 archivoParaEncriptar[archivoParaEncriptar.length - 4 + i] = bytesTamanio[i];
             }
         }
+        byte[] archivoResultado=null;
+
         if (tipoEncriptacion == SECUENCIAL || tipoEncriptacion == TODOS) {
-            EncriptadoSecuencial encriptadoSecuencial = new EncriptadoSecuencial(archivoParaEncriptar);
+            byte[] dataSecuencial = Arrays.copyOf(archivoParaEncriptar, archivoParaEncriptar.length);
+
+            EncriptadoSecuencial encriptadoSecuencial = new EncriptadoSecuencial(dataSecuencial);
             long startTime = System.nanoTime();
             encriptadoSecuencial.encriptar(llave);
             long stopTime = System.nanoTime();
+
             clientes.get(codCliente).setTiempos(stopTime - startTime, SECUENCIAL);
+            archivoResultado=dataSecuencial;
         }
+        if(tipoEncriptacion == EXECUTOR || tipoEncriptacion == TODOS) {
+            byte[] dataExecutor = Arrays.copyOf(archivoParaEncriptar, archivoParaEncriptar.length);
+            EncriptadoExecutor encriptadoExecutor = new EncriptadoExecutor(dataExecutor, llave);
+            long startTime = System.nanoTime();
+            try {
+                encriptadoExecutor.encriptar();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            long stopTime = System.nanoTime();
+            clientes.get(codCliente).setTiempos(stopTime - startTime, EXECUTOR);
+            archivoResultado=dataExecutor;
+        }
+        if(tipoEncriptacion == FORKJOIN || tipoEncriptacion == TODOS){
+            byte[] dataForkJoin = Arrays.copyOf(archivoParaEncriptar, archivoParaEncriptar.length);
+
+            EncriptadoForkJoin encriptadoForkJoin = new EncriptadoForkJoin(dataForkJoin, 0, dataForkJoin.length - 1,
+                    llave);
+
+            ForkJoinPool pool = new ForkJoinPool();
+            long startTime = System.nanoTime();
+            pool.submit(encriptadoForkJoin).join();
+            long stopTime = System.nanoTime();
+
+            clientes.get(codCliente).setTiempos(stopTime - startTime, FORKJOIN);
+            archivoResultado=dataForkJoin;
+        }
+
         //TODO otros tipos de encriptacion
 
-        /*
-        String[] nombresArchivosNuevos=new String[2];
-        for (int i=0;i<nombresArchivos.length;i++) {
-            String nombreArchivo=nombresArchivos[i];
-            String extension = nombreArchivo.substring(nombreArchivo.lastIndexOf("."));
-            if (extension.equals(".ceticrypt")) {
-                nombresArchivosNuevos[i] = nombreArchivo.substring(0, nombreArchivo.length() - 10);
-            }else{
-                nombresArchivosNuevos[i] = nombreArchivo+".ceticrypt";
-            }
-        }*/
+
         if(encriptado){
-            byte[] tamanioBytes=Arrays.copyOfRange(archivoParaEncriptar,archivoParaEncriptar.length-4,archivoParaEncriptar.length);
+            byte[] tamanioBytes=Arrays.copyOfRange(archivoResultado,archivoResultado.length-4,archivoResultado.length);
             int tamanio=java.nio.ByteBuffer.wrap(tamanioBytes).getInt();
-            byte[] archivoSinBytesTamanio=Arrays.copyOfRange(archivoParaEncriptar,0,archivoParaEncriptar.length-4);
+            byte[] archivoSinBytesTamanio=Arrays.copyOfRange(archivoResultado,0,archivoResultado.length-4);
             clientes.get(codCliente).setImagenes(archivoSinBytesTamanio, tamanio);
         }else{
-            clientes.get(codCliente).setResultado(archivoParaEncriptar, nombreArchivoNuevo);
+            clientes.get(codCliente).setResultado(archivoResultado, nombreArchivoNuevo);
         }
 
 

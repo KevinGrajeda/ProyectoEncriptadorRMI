@@ -6,6 +6,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static main.Main.SALT;
+
 public class EncriptadoExecutor {
     byte data[];
     int partes;
@@ -28,7 +30,7 @@ public class EncriptadoExecutor {
             callables.add(new Callable<Void>() {  
                 public Void call() throws Exception {  
                     for (int i=inicio;i<=fin;i++) {
-                        data[i] = (byte) (data[i] ^ (int)(Math.pow(llave, i)));
+                        data[i] = (byte) (data[i] ^ (int)(Math.pow(llave,SALT)));
                     }
                     return null;
                 }  

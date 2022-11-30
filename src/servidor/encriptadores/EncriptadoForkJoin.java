@@ -2,6 +2,8 @@ package servidor.encriptadores;
 
 import java.util.concurrent.RecursiveAction;
 
+import static main.Main.SALT;
+
 public class EncriptadoForkJoin extends RecursiveAction {
     
     private byte data[];
@@ -20,7 +22,6 @@ public class EncriptadoForkJoin extends RecursiveAction {
     protected void compute() {
         if (fin - inicio < 500) {
             encriptar(data, inicio, fin);
-            //System.out.println("aaaaa:"+inicio+","+fin+1);
         } else {
             int mitad=(inicio+fin)/2;
             RecursiveAction arrIzq=new EncriptadoForkJoin(data,inicio,mitad,llave);
@@ -31,7 +32,7 @@ public class EncriptadoForkJoin extends RecursiveAction {
 
     private void encriptar(byte[] data, int inicio, int fin) {
         for (int i=inicio;i<=fin;i++) {
-            data[i] = (byte) (data[i] ^ (int)(Math.pow(llave, i)));
+            data[i] = (byte) (data[i] ^ (int)(Math.pow(llave,SALT)));
         }
     }
 
